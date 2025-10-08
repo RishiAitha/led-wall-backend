@@ -150,18 +150,36 @@ wss.on('connection', (ws) => { // runs when a client connects to the server
     });
 });
 
-app.listen(httpPort, () => {
+// handle server shutdowns for websockets and clients
+function handleShutdown(signal) {
+    console.log(`\nReceived ${signal}, shutting down servers`);
+    wss.close(() => {
+        server.close(() => {
+            console.log('All servers closed.');
+            process.exit(0);
+        });
+    });
+}
+
+app.listen(httpPort, () => { // turns on app on port
     console.log(`HTTP server listening at http://localhost:${httpPort}`);
 });
 
-server.listen(wsPort, () => {
+server.listen(wsPort, () => { // turns on websocket server on port
     console.log(`WebSocket server listening on port ${wsPort}`);
 });
 
-process.on('SIGINT', () => {
-    console.log('\nShutting down servers');
-    wss.clients.forEach(ws => {
-        ws.close();
-    });
-    process.exit(0);
+// handle all shutdown processes
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGQUIT', () => handleShutdown('SIGQUIT'));
+
+process.on('uncaughtException', (error) => { // shutdown on uncaught exception
+    console.error('Uncaught Exception:', error);
+    handleShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (error) => { // shutdown on unhandled rejection
+    console.error('Unhandled Rejection:', error);
+    handleShutdown('unhandledRejection');
 });
