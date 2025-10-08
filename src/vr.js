@@ -11,6 +11,7 @@ if (navigator.xr) {
     window.location.href = '/desktop';
 }
 
+let floor;
 function setupScene({ scene, camera, renderer, player, controllers }) {
     const floorGeometry = new THREE.PlaneGeometry(6, 6);
     const floorMaterial = new THREE.MeshStandardMaterial({color: 'white'});
@@ -32,4 +33,6 @@ async function onFrame(delta, time, {scene, camera, renderer, player, controller
 
 cm.registerToServer('VR')
     .then(response => {})
-    .catch(error => console.error('Failed:'. error));
+    .catch(error => console.error('Failed:', error));
+
+init(setupScene, onFrame);

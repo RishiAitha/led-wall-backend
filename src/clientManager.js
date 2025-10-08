@@ -2,7 +2,8 @@ let ws = null;
 let connectionState = 'disconnected';
 let clientType = null;
 
-// created a general registration system with WebSocket then had AI help me add best practices like timeouts and promises
+// Notes from Rishi: created a general registration system with WebSocket 
+// then had AI teach me how to add best practices like timeouts and promises
 export function registerToServer(type) {
     return new Promise((resolve, reject) => {
         if (connectionState === 'connecting') {
@@ -31,6 +32,9 @@ export function registerToServer(type) {
         let registrationRejector = null;
 
         ws.onopen = () => {
+            registrationResolver = resolve;
+            registrationRejector = reject;
+            
             console.log('WebSocket connection opened');
             connectionState = 'connected';
 
@@ -40,9 +44,6 @@ export function registerToServer(type) {
             }));
 
             console.log('Registration request sent for:', type);
-
-            registrationResolver = resolve;
-            registrationRejector = reject;
         };
 
         ws.onmessage = ({ data }) => {
@@ -66,7 +67,7 @@ export function registerToServer(type) {
             connectionState = 'disconnected';
             console.log('WebSocket connection closed:', event.code, event.reason);
 
-            if (registrationRejector) {
+            if (registrationRejector && connectionState === 'connecting') {
                 registrationRejector(new Error('Connection closed before registration completed'));
             }
 
@@ -75,9 +76,11 @@ export function registerToServer(type) {
 
         ws.onerror = (error) => {
             clearTimeout(timeout);
-            connectionState = 'disconnected';
             console.error('WebSocket error:', error);
-            reject(error);
+            if (registrationRejector && connectionState === 'connecting') {
+                registrationRejector(error);
+            }
+            connectionState = 'disconnected';
         };
     });
 }

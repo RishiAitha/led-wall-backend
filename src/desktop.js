@@ -8,4 +8,4 @@ if (navigator.xr) {
 
 cm.registerToServer('DESKTOP')
     .then(response => {})
-    .catch(error => console.error('Failed:'. error));
+    .catch(error => console.error('Failed:', error));

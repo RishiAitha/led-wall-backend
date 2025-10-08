@@ -72,10 +72,12 @@ export async function init(setupScene = () => {}, onFrame = () => {}) {
     }
 
     function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
+        if (!renderer.xr.isPresenting) {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
 
-        renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
     }
 
     window.addEventListener('resize', onWindowResize);

@@ -1,3 +1,4 @@
+// express and websocket server setup
 const express = require('express');
 const path = require('path');
 const http = require('http');
@@ -9,12 +10,14 @@ const wsPort = 3000;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// info on clients
 const connectedClients = new Map();
 let wallConnected = false;
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.json()); // start up app
+app.use(express.static(path.join(__dirname, 'dist'))); // serve static files
 
+// http routes
 const routes = [
     { path: '/', file: 'index.html' },
     { path: '/vr', file: 'vr.html' },
@@ -22,12 +25,14 @@ const routes = [
     { path: '/wall', file: 'wall.html' },
 ];
 
+// set up files for each route
 routes.forEach((route) => {
     app.get(route.path, (req, res) => {
         res.sendFile(path.join(__dirname, 'dist', route.file));
     });
 });
 
+// handle message coming to server
 function handleMessage(ws, data) {
     if (!data.type) {
         sendError(ws, 'No data type specified');
@@ -35,10 +40,10 @@ function handleMessage(ws, data) {
     }
 
     switch (data.type) {
-        case 'REGISTER_CLIENT':
+        case 'REGISTER_CLIENT': // client wants to register to the server
             handleClientRegistration(ws, data);
             break;
-        case 'ERROR':
+        case 'ERROR': // client told server there was an error
             console.error('Client sent error:', data.message);
             break;
         default:
@@ -47,8 +52,9 @@ function handleMessage(ws, data) {
     }
 }
 
+// handle a new client being registered
 function handleClientRegistration(ws, data) {
-    const { clientType } = data;
+    const { clientType } = data; // take the client type from the given data
 
     if (!clientType) {
         sendError(ws, 'Client type is required');
@@ -56,14 +62,17 @@ function handleClientRegistration(ws, data) {
     }
 
     switch (clientType) {
-        case 'WALL':
-            if (wallConnected) {
+        case 'WALL': // wall type connected
+            if (wallConnected) { // we already have a wall, send a registration error
+                // this needs to be handled as a separate message because
+                // errors during registration impact connection state
                 sendMessage(ws, {
                     type: 'REGISTRATION_ERROR',
                     message: 'Wall client already connected'
                 });
             } else {
-                wallConnected = true;
+                wallConnected = true; // mark that a wall has been connected
+                // store wall client with websocket and tell client it is successful
                 ws.clientType = 'WALL';
                 connectedClients.set(ws, { type: 'WALL', connectedAt: new Date() });
                 sendMessage(ws, {
@@ -75,6 +84,7 @@ function handleClientRegistration(ws, data) {
             break;
         case 'VR':
         case 'DESKTOP':
+            // store vr or desktop client with websocket and tell client it is successful
             ws.clientType = clientType;
             connectedClients.set(ws, {
                 type: clientType,
@@ -92,36 +102,39 @@ function handleClientRegistration(ws, data) {
     }
 }
 
-function handleDisconnection(ws) {
+function handleDisconnection(ws) { // runs when a client websocket closes
     const clientInfo = connectedClients.get(ws);
     if (clientInfo) {
+        // removes client from client storage
         console.log(`${clientInfo.type} client disconnected`);
         connectedClients.delete(ws);
 
-        if (clientInfo.type === 'WALL') {
+        if (clientInfo.type === 'WALL') { // updates relevant info on connected wall
             wallConnected = false;
             console.log('Wall connected reset');
         }
     }
 }
 
-function sendMessage(ws, message) {
+function sendMessage(ws, message) { // sends message to client
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
     }
 }
 
-function sendError(ws, message) {
+function sendError(ws, message) { // sends message of type 'ERROR' to client
+    // use this for general, simple errors, specific stuff like registration errors
+    // can instead have their own error types when appropriate
     sendMessage(ws, {
         type: 'ERROR',
         message: message
     });
 }
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws) => { // runs when a client connects to the server
     console.log('New WebSocket connection established');
 
-    ws.on('message', (rawData) => {
+    ws.on('message', (rawData) => { // runs when a client sends a message to the server
         try {
             const data = JSON.parse(rawData);
             console.log('Received data:', data);
@@ -132,7 +145,7 @@ wss.on('connection', (ws) => {
         }
     });
 
-    ws.on('close', () => {
+    ws.on('close', () => { // runs when a client websocket disconnects from the server
         handleDisconnection(ws);
     });
 });
