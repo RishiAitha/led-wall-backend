@@ -14,7 +14,8 @@ const connectedClients = new Map();
 let wallRegistered = false;
 
 app.use(express.json()); // start up app
-app.use(express.static(path.join(__dirname, 'dist'))); // serve static files
+app.use(express.static(path.join(__dirname, 'dist'))); // serve JS bundles
+app.use(express.static(path.join(__dirname, 'public'))); // serve static files
 
 // http routes
 const routes = [
@@ -27,7 +28,7 @@ const routes = [
 // set up files for each route
 routes.forEach((route) => {
     app.get(route.path, (req, res) => {
-        res.sendFile(path.join(__dirname, 'dist', route.file));
+        res.sendFile(path.join(__dirname, 'public', route.file));
     });
 });
 

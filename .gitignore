@@ -1,4 +1,4 @@
 node_modules/
-dist/*.js
+dist/
 .env
 .DS_Store
