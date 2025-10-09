@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-    mode: 'development',
+    mode: process.env.NODE_ENV || 'development',
     entry: {
         index: './src/index.js',
         vr: './src/vr.js',
@@ -11,5 +11,6 @@ module.exports = {
     output: {
         filename: '[name].js',
         path: path.resolve(__dirname, 'dist'),
+        clean: true, // Cleans old files in dist
     },
 };

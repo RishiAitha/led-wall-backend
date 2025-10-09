@@ -5,8 +5,7 @@ const http = require('http');
 const WebSocket = require('ws');
 
 const app = express();
-const httpPort = 8081;
-const wsPort = 3000;
+const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
@@ -189,12 +188,8 @@ function handleShutdown(signal) {
     });
 }
 
-app.listen(httpPort, () => { // turns on app on port
-    console.log(`HTTP server listening at http://localhost:${httpPort}`);
-});
-
-server.listen(wsPort, () => { // turns on websocket server on port
-    console.log(`WebSocket server listening on port ${wsPort}`);
+server.listen(port, () => { // turns on websocket server on port
+    console.log(`HTTP/WebSocket servers listening on port ${port}`);
 });
 
 // handle all shutdown processes
