@@ -30,3 +30,13 @@ if (ws) {
         updateStatus();
     });
 }
+
+const scoreButton = document.createElement('button');
+scoreButton.textContent = 'Add to Score!';
+scoreButton.onclick = () => {
+    cm.sendMessage({
+        type: 'DESKTOP_INPUT',
+        message: 'increase_button'
+    });
+}
+document.body.appendChild(scoreButton);

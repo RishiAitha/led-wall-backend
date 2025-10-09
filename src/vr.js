@@ -26,7 +26,7 @@ function setupScene({ scene, camera, renderer, player, controllers }) {
     statusDisplay.anchorY = 'middle';
     statusDisplay.fontSize = 0.25;
     scene.add(statusDisplay);
-    statusDisplay.position.set(0, 0.67, -1.5);
+    statusDisplay.position.set(0, 1.5, -1.5);
 }
 
 async function onFrame(delta, time, {scene, camera, renderer, player, controllers}) {
@@ -35,7 +35,12 @@ async function onFrame(delta, time, {scene, camera, renderer, player, controller
         const controller = controllerConfigs[i];
         if (controller) {
             const {gamepad, raySpace, mesh} = controller;
-            // do stuff with controller input here
+            if (gamepad.getButtonClick(XR_BUTTONS.TRIGGER)) {
+                cm.sendMessage({
+                    type: 'VR_INPUT',
+                    message: `${i == 1 ? 'right' : 'left'}_trigger`
+                });
+            }
         }
     }
 }

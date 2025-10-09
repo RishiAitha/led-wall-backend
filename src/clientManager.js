@@ -1,6 +1,7 @@
 let ws = null;
 let connectionState = 'disconnected';
 let clientType = null;
+const inputActions = new Map();
 
 // Notes from Rishi: created a general registration system with WebSocket 
 // then had AI teach me how to add best practices like timeouts and promises
@@ -112,6 +113,16 @@ function handleIncomingMessage(message, { resolve, reject, timeout }) {
                 reject(new Error(message.message));
             }
             break;
+        case 'VR_INPUT':
+        case 'DESKTOP_INPUT':
+            if (clientType === 'WALL') {
+                const inputHandler = inputActions.get(message.type);
+                console.log(inputHandler);
+                if (inputHandler) {
+                    inputHandler(message.message);
+                }
+            }
+            break;
         case 'ERROR':
             console.error('Server sent error:', message.message);
             break;
@@ -122,11 +133,15 @@ function handleIncomingMessage(message, { resolve, reject, timeout }) {
 }
 
 export function sendMessage(message) {
-    if (!isConnected()) {
-        throw new Error('Not connected to server');
+    if (!isRegistered()) {
+        throw new Error('Not registered to server');
     }
 
     ws.send(JSON.stringify(message));
+}
+
+export function handleInput(type, handlerFunction) {
+    inputActions.set(type, handlerFunction);
 }
 
 function sendError(message) {
@@ -159,11 +174,11 @@ export function getConnectionState() {
     return {
         state: connectionState,
         clientType: clientType,
-        isConnected: isConnected()
+        isRegistered: isRegistered()
     };
 }
 
-export function isConnected() {
+export function isRegistered() {
     return ws && ws.readyState === WebSocket.OPEN && connectionState === 'registered';
 }
 

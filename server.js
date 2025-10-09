@@ -46,6 +46,16 @@ function handleMessage(ws, data) {
         case 'ERROR': // client told server there was an error
             console.error('Client sent error:', data.message);
             break;
+        case 'VR_INPUT': // handle vr client input
+        case 'DESKTOP_INPUT': // handle desktop client input
+            let wallClient = getWallClient();
+            if (wallClient) {
+                sendMessage(wallClient, {
+                    type: data.type,
+                    message: data.message
+                });
+            }
+            break;
         default:
             sendError(ws, 'Data type has no matches');
             break;
@@ -131,6 +141,16 @@ function sendError(ws, message) { // sends message of type 'ERROR' to client
     });
 }
 
+function getWallClient() {
+    if (!wallRegistered) return null;
+    for (const [ws, clientInfo] of connectedClients) {
+        if (clientInfo.type === 'WALL') {
+            return ws;
+        }
+    }
+    return null;
+}
+
 wss.on('connection', (ws) => { // runs when a client connects to the server
     console.log('New WebSocket connection established');
 
@@ -153,9 +173,17 @@ wss.on('connection', (ws) => { // runs when a client connects to the server
 // handle server shutdowns for websockets and clients
 function handleShutdown(signal) {
     console.log(`\nReceived ${signal}, shutting down servers`);
+    for (const [ws] of connectedClients) {
+        ws.close();
+    }
+
+    connectedClients.clear();
+    wallRegistered = false;
+
     wss.close(() => {
+        console.log('WebSocket server closed');
         server.close(() => {
-            console.log('All servers closed.');
+            console.log('HTTP server closed');
             process.exit(0);
         });
     });
