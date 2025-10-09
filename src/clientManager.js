@@ -19,7 +19,9 @@ export function registerToServer(type) {
         }
 
         connectionState = 'connecting';
-        ws = new WebSocket('ws://localhost:3000');
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl = `${protocol}://${window.location.host}`;
+        ws = new WebSocket(wsUrl);
 
         const timeout = setTimeout(() => {
             connectionState = 'disconnected';
