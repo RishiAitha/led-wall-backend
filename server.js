@@ -12,7 +12,7 @@ const wss = new WebSocket.Server({ server });
 
 // info on clients
 const connectedClients = new Map();
-let wallConnected = false;
+let wallRegistered = false;
 
 app.use(express.json()); // start up app
 app.use(express.static(path.join(__dirname, 'dist'))); // serve static files
@@ -63,15 +63,15 @@ function handleClientRegistration(ws, data) {
 
     switch (clientType) {
         case 'WALL': // wall type connected
-            if (wallConnected) { // we already have a wall, send a registration error
+            if (wallRegistered) { // we already have a wall, send a registration error
                 // this needs to be handled as a separate message because
                 // errors during registration impact connection state
                 sendMessage(ws, {
                     type: 'REGISTRATION_ERROR',
-                    message: 'Wall client already connected'
+                    message: 'Wall client already registered'
                 });
             } else {
-                wallConnected = true; // mark that a wall has been connected
+                wallRegistered = true; // mark that a wall has been connected
                 // store wall client with websocket and tell client it is successful
                 ws.clientType = 'WALL';
                 connectedClients.set(ws, { type: 'WALL', connectedAt: new Date() });
@@ -110,8 +110,8 @@ function handleDisconnection(ws) { // runs when a client websocket closes
         connectedClients.delete(ws);
 
         if (clientInfo.type === 'WALL') { // updates relevant info on connected wall
-            wallConnected = false;
-            console.log('Wall connected reset');
+            wallRegistered = false;
+            console.log('Wall registered reset');
         }
     }
 }
