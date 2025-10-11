@@ -25,59 +25,46 @@ if (ws) {
     });
 }
 
-let score = 0;
-let multiplier = 1;
-let bonusActive = false;
-let bonusTimeout = null;
-
-const scoreDisplay = document.createElement('div');
-scoreDisplay.textContent = `Score: ${score}`;
-document.body.appendChild(scoreDisplay);
-
-const bonusDisplay = document.createElement('div');
-bonusDisplay.textContent = bonusActive ? 'Bonus Active' : 'Bonus Inactive';
-document.body.appendChild(bonusDisplay);
-
-function increaseScore() {
-    score += multiplier;
-    scoreDisplay.textContent = `Score: ${score}`;
+function handleVRState(message) {
+    const { controllerType, buttonType, buttonState, userID } = message;
+    const stateDisplay = document.getElementById(`${controllerType}-${buttonType}-display-${userID}`);
+    stateDisplay.textContent = `${controllerType} ${buttonType}: ${buttonState}`;
 }
 
-function updateBonusDisplay() {
-    if (bonusActive) {
-        bonusDisplay.textContent = 'Bonus Active';
-    } else {
-        bonusDisplay.textContent = 'Bonus Inactive';
-    }
+function handleNewClient(message) {
+    const { type, userID } = message;
+    const clientInfoDisplay = document.createElement('div');
+    clientInfoDisplay.id = `client-display-${userID}`;
+    clientInfoDisplay.textContent = `\n\nClient Type: ${type}\nClient ID: ${userID}`;
+    clientInfoDisplay.style.whiteSpace = 'pre-line';
+
+    const leftControllerDisplay = document.createElement('div');
+    leftControllerDisplay.id = `left-controller-display-${userID}`;
+    leftControllerDisplay.style.whiteSpace = 'pre-line';
+    const leftTriggerDisplay = document.createElement('div');
+    leftTriggerDisplay.id = `left-trigger-display-${userID}`;
+    leftTriggerDisplay.style.whiteSpace = 'pre-line';
+
+    const rightControllerDisplay = document.createElement('div');
+    rightControllerDisplay.id = `right-controller-display-${userID}`;
+    rightControllerDisplay.style.whiteSpace = 'pre-line';
+    const rightTriggerDisplay = document.createElement('div');
+    rightTriggerDisplay.id = `right-trigger-display-${userID}`;
+    rightTriggerDisplay.style.whiteSpace = 'pre-line';
+
+    leftControllerDisplay.appendChild(leftTriggerDisplay);
+    rightControllerDisplay.appendChild(rightTriggerDisplay);
+    clientInfoDisplay.appendChild(leftControllerDisplay);
+    clientInfoDisplay.appendChild(rightControllerDisplay);
+    document.body.appendChild(clientInfoDisplay);
 }
 
-function resetBonusTimer() {
-    if (bonusTimeout != null) {
-        clearTimeout(bonusTimeout);
-    }
-
-    bonusTimeout = setTimeout(() => {
-        bonusActive = false;
-        multiplier = 1;
-        updateBonusDisplay();
-        bonusTimeout = null;
-    }, 5000);
+function handleClientDisconnect(message) {
+    const { type, userID } = message;
+    const clientInfoDisplay = document.getElementById(`client-display-${userID}`);
+    clientInfoDisplay.remove();
 }
 
-function handleVRInput(inputMessage) {
-    if (inputMessage == 'left_trigger' || inputMessage == 'right_trigger') {
-        bonusActive = true;
-        multiplier = 3;
-        updateBonusDisplay();
-        resetBonusTimer();
-    }
-}
-
-function handleDesktopInput(inputMessage) {
-    if (inputMessage == 'increase_button') {
-        increaseScore();
-    }
-}
-
-cm.handleInput('VR_INPUT', handleVRInput);
-cm.handleInput('DESKTOP_INPUT', handleDesktopInput);
+cm.handleData('NEW_CLIENT', handleNewClient);
+cm.handleData('CLIENT_DISCONNECTED', handleClientDisconnect);
+cm.handleData('VR_CONTROLLER_STATE', handleVRState);

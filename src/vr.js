@@ -35,12 +35,14 @@ async function onFrame(delta, time, {scene, camera, renderer, player, controller
         const controller = controllerConfigs[i];
         if (controller) {
             const {gamepad, raySpace, mesh} = controller;
-            if (gamepad.getButtonClick(XR_BUTTONS.TRIGGER)) {
-                cm.sendMessage({
-                    type: 'VR_INPUT',
-                    message: `${i == 1 ? 'right' : 'left'}_trigger`
-                });
-            }
+            cm.sendMessage({
+                type: 'VR_CONTROLLER_STATE',
+                message: {
+                    controllerType: i == 0 ? 'right' : 'left',
+                    buttonType: 'trigger',
+                    buttonState: gamepad.getButton(XR_BUTTONS.TRIGGER) ? 'down' : 'up'
+                }
+            });
         }
     }
 }

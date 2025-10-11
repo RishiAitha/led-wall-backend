@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -46,13 +47,14 @@ function handleMessage(ws, data) {
         case 'ERROR': // client told server there was an error
             console.error('Client sent error:', data.message);
             break;
-        case 'VR_INPUT': // handle vr client input
-        case 'DESKTOP_INPUT': // handle desktop client input
+        case 'VR_CONTROLLER_STATE': // handle vr client input
+            const senderClientInfo = connectedClients.get(ws);
+            const userID = senderClientInfo.userID;
             let wallClient = getWallClient();
             if (wallClient) {
                 sendMessage(wallClient, {
                     type: data.type,
-                    message: data.message
+                    message: { ...data.message, userID }
                 });
             }
             break;
@@ -84,26 +86,48 @@ function handleClientRegistration(ws, data) {
                 wallRegistered = true; // mark that a wall has been connected
                 // store wall client with websocket and tell client it is successful
                 ws.clientType = 'WALL';
-                connectedClients.set(ws, { type: 'WALL', connectedAt: new Date() });
+                ws.userID = uuidv4();
+                connectedClients.set(ws, { type: 'WALL', userID: ws.userID });
                 sendMessage(ws, {
                     type: 'REGISTRATION_SUCCESS',
                     message: 'Successfully registered as WALL client'
                 });
                 console.log('WALL client registered');
+                for (const [ws, clientInfo] of connectedClients) {
+                    if (clientInfo.type !== 'WALL') {
+                        sendMessage(getWallClient(), {
+                            type: 'NEW_CLIENT',
+                            message: {
+                                type: clientInfo.type,
+                                userID: clientInfo.userID
+                            }
+                        });
+                    }
+                }
             }
             break;
         case 'VR':
         case 'DESKTOP':
             // store vr or desktop client with websocket and tell client it is successful
             ws.clientType = clientType;
+            ws.userID = uuidv4();
             connectedClients.set(ws, {
                 type: clientType,
-                connectedAt: new Date()
+                userID: ws.userID
             });
             sendMessage(ws, {
                 type: 'REGISTRATION_SUCCESS',
                 message: `Successfully registered as ${clientType} client`
             });
+            if (wallRegistered) {
+                sendMessage(getWallClient(), {
+                    type: 'NEW_CLIENT',
+                    message: {
+                        type: clientType,
+                        userID: ws.userID
+                    }
+                });
+            }
             console.log(`${clientType} client registered`);
             break;
         default:
@@ -115,14 +139,24 @@ function handleClientRegistration(ws, data) {
 function handleDisconnection(ws) { // runs when a client websocket closes
     const clientInfo = connectedClients.get(ws);
     if (clientInfo) {
-        // removes client from client storage
-        console.log(`${clientInfo.type} client disconnected`);
-        connectedClients.delete(ws);
-
         if (clientInfo.type === 'WALL') { // updates relevant info on connected wall
             wallRegistered = false;
             console.log('Wall registered reset');
+        } else {
+            if (wallRegistered) {
+                sendMessage(getWallClient(), {
+                    type: 'CLIENT_DISCONNECTED',
+                    message: {
+                        type: clientInfo.type,
+                        userID: clientInfo.userID
+                    }
+                })
+            }
         }
+
+        // removes client from client storage
+        console.log(`${clientInfo.type} client disconnected`);
+        connectedClients.delete(ws);
     }
 }
 
