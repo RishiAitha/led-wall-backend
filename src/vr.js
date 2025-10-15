@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { init } from './init.js';
 import * as cm from './clientManager.js';
-import { XR_BUTTONS } from 'gamepad-wrapper';
+import { XR_BUTTONS, XR_AXES } from 'gamepad-wrapper';
 import { Text } from 'troika-three-text';
 
 if (navigator.xr) {
@@ -34,13 +34,21 @@ async function onFrame(delta, time, {scene, camera, renderer, player, controller
     for (let i = 0; i < 2; i++) {
         const controller = controllerConfigs[i];
         if (controller) {
-            const {gamepad, raySpace, mesh} = controller;
+            const {gamepad, raySpace, gripSpace, mesh} = controller;
             cm.sendMessage({
                 type: 'VR_CONTROLLER_STATE',
                 message: {
                     controllerType: i == 0 ? 'right' : 'left',
-                    buttonType: 'trigger',
-                    buttonState: gamepad.getButton(XR_BUTTONS.TRIGGER) ? 'down' : 'up'
+                    triggerButtonState: gamepad.getButton(XR_BUTTONS.TRIGGER),
+                    squeezeButtonState: gamepad.getButton(XR_BUTTONS.SQUEEZE),
+                    touchpadButtonState: gamepad.getButton(XR_BUTTONS.TOUCHPAD),
+                    thumbstickButtonState: gamepad.getButton(XR_BUTTONS.THUMBSTICK),
+                    button1State: gamepad.getButton(XR_BUTTONS.BUTTON_1),
+                    button2State: gamepad.getButton(XR_BUTTONS.BUTTON_2),
+                    touchpadXAxisState: gamepad.getAxis(XR_AXES.TOUCHPAD_X),
+                    touchpadYAxisState: gamepad.getAxis(XR_AXES.TOUCHPAD_Y),
+                    thumbstickXAxisState: gamepad.getAxis(XR_AXES.THUMBSTICK_X),
+                    thumbstickYAxisState: gamepad.getAxis(XR_AXES.THUMBSTICK_Y)
                 }
             });
         }
@@ -62,11 +70,6 @@ cm.registerToServer('VR')
         updateStatus();
     });
 
-const ws = cm.getWebSocket();
-if (ws) {
-    ws.addEventListener('close', () => {
-        updateStatus();
-    });
-}
+cm.handleEvent('CLOSE', updateStatus);
 
 init(setupScene, onFrame);

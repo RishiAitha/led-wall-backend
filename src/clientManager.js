@@ -1,7 +1,7 @@
 let ws = null;
 let connectionState = 'disconnected';
 let clientType = null;
-const dataActions = new Map();
+const eventActions = new Map();
 
 // Notes from Rishi: created a general registration system with WebSocket 
 // then had AI teach me how to add best practices like timeouts and promises
@@ -67,23 +67,33 @@ export function registerToServer(type) {
 
         ws.onclose = (event) => {
             clearTimeout(timeout);
-            connectionState = 'disconnected';
-            console.log('WebSocket connection closed:', event.code, event.reason);
+            
+            let handlerFunction = eventActions.get('CLOSE');
+            if (typeof handlerFunction === 'function') {
+                handlerFunction();
+            }
 
             if (registrationRejector && connectionState === 'connecting') {
                 registrationRejector(new Error('Connection closed before registration completed'));
             }
 
-            ws = null;
+            disconnect();
         }
 
         ws.onerror = (error) => {
             clearTimeout(timeout);
             console.error('WebSocket error:', error);
+
+            let handlerFunction = eventActions.get('CLOSE');
+            if (typeof handlerFunction === 'function') {
+                handlerFunction();
+            }
+
             if (registrationRejector && connectionState === 'connecting') {
                 registrationRejector(error);
             }
-            connectionState = 'disconnected';
+            
+            disconnect();
         };
     });
 }
@@ -119,8 +129,10 @@ function handleIncomingMessage(message, { resolve, reject, timeout }) {
         case 'NEW_CLIENT':
         case 'CLIENT_DISCONNECTED':
             if (clientType === 'WALL') {
-                let handlerFunction = dataActions.get(message.type);
-                handlerFunction(message.message);
+                let handlerFunction = eventActions.get(message.type);
+                if (typeof handlerFunction === 'function') {
+                    handlerFunction(message.message);
+                }
             }
             break;
         case 'ERROR':
@@ -140,8 +152,8 @@ export function sendMessage(message) {
     ws.send(JSON.stringify(message));
 }
 
-export function handleData(type, handlerFunction) {
-    dataActions.set(type, handlerFunction);
+export function handleEvent(type, handlerFunction) {
+    eventActions.set(type, handlerFunction);
 }
 
 function sendError(message) {
@@ -180,8 +192,4 @@ export function getConnectionState() {
 
 export function isRegistered() {
     return ws && ws.readyState === WebSocket.OPEN && connectionState === 'registered';
-}
-
-export function getWebSocket() {
-    return ws;
 }

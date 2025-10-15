@@ -18,17 +18,11 @@ cm.registerToServer('WALL')
         updateStatus();
     });
 
-const ws = cm.getWebSocket();
-if (ws) {
-    ws.addEventListener('close', () => {
-        updateStatus();
-    });
-}
+cm.handleEvent('CLOSE', updateStatus);
 
 function handleVRState(message) {
-    const { controllerType, buttonType, buttonState, userID } = message;
-    const stateDisplay = document.getElementById(`${controllerType}-${buttonType}-display-${userID}`);
-    stateDisplay.textContent = `${controllerType} ${buttonType}: ${buttonState}`;
+    const stateDisplay = document.getElementById(`${message.controllerType}-controller-display-${message.userID}`);
+    stateDisplay.textContent = JSON.stringify(message, null, 2);
 }
 
 function handleNewClient(message) {
@@ -38,24 +32,19 @@ function handleNewClient(message) {
     clientInfoDisplay.textContent = `\n\nClient Type: ${type}\nClient ID: ${userID}`;
     clientInfoDisplay.style.whiteSpace = 'pre-line';
 
-    const leftControllerDisplay = document.createElement('div');
-    leftControllerDisplay.id = `left-controller-display-${userID}`;
-    leftControllerDisplay.style.whiteSpace = 'pre-line';
-    const leftTriggerDisplay = document.createElement('div');
-    leftTriggerDisplay.id = `left-trigger-display-${userID}`;
-    leftTriggerDisplay.style.whiteSpace = 'pre-line';
+    if (type === 'VR') {
+        const leftControllerStateDisplay = document.createElement('div');
+        leftControllerStateDisplay.id = `left-controller-display-${userID}`;
+        leftControllerStateDisplay.style.whiteSpace = 'pre-line';
 
-    const rightControllerDisplay = document.createElement('div');
-    rightControllerDisplay.id = `right-controller-display-${userID}`;
-    rightControllerDisplay.style.whiteSpace = 'pre-line';
-    const rightTriggerDisplay = document.createElement('div');
-    rightTriggerDisplay.id = `right-trigger-display-${userID}`;
-    rightTriggerDisplay.style.whiteSpace = 'pre-line';
+        const rightControllerStateDisplay = document.createElement('div');
+        rightControllerStateDisplay.id = `right-controller-display-${userID}`;
+        rightControllerStateDisplay.style.whiteSpace = 'pre-line';
 
-    leftControllerDisplay.appendChild(leftTriggerDisplay);
-    rightControllerDisplay.appendChild(rightTriggerDisplay);
-    clientInfoDisplay.appendChild(leftControllerDisplay);
-    clientInfoDisplay.appendChild(rightControllerDisplay);
+        clientInfoDisplay.appendChild(leftControllerStateDisplay);
+        clientInfoDisplay.appendChild(rightControllerStateDisplay);
+    }
+    
     document.body.appendChild(clientInfoDisplay);
 }
 
@@ -65,6 +54,6 @@ function handleClientDisconnect(message) {
     clientInfoDisplay.remove();
 }
 
-cm.handleData('NEW_CLIENT', handleNewClient);
-cm.handleData('CLIENT_DISCONNECTED', handleClientDisconnect);
-cm.handleData('VR_CONTROLLER_STATE', handleVRState);
+cm.handleEvent('NEW_CLIENT', handleNewClient);
+cm.handleEvent('CLIENT_DISCONNECTED', handleClientDisconnect);
+cm.handleEvent('VR_CONTROLLER_STATE', handleVRState);

@@ -14,6 +14,8 @@ const wss = new WebSocket.Server({ server });
 const connectedClients = new Map();
 let wallRegistered = false;
 
+let isShuttingDown = false;
+
 app.use(express.json()); // start up app
 app.use(express.static(path.join(__dirname, 'dist'))); // serve JS bundles
 app.use(express.static(path.join(__dirname, 'public'))); // serve static files
@@ -189,6 +191,8 @@ wss.on('connection', (ws) => { // runs when a client connects to the server
     console.log('New WebSocket connection established');
 
     ws.on('message', (rawData) => { // runs when a client sends a message to the server
+        if (isShuttingDown) return;
+
         try {
             const data = JSON.parse(rawData);
             console.log('Received data:', data);
@@ -205,22 +209,35 @@ wss.on('connection', (ws) => { // runs when a client connects to the server
 });
 
 // handle server shutdowns for websockets and clients
-function handleShutdown(signal) {
+async function handleShutdown(signal) {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
     console.log(`\nReceived ${signal}, shutting down servers`);
-    for (const [ws] of connectedClients) {
-        ws.close();
-    }
 
-    connectedClients.clear();
-    wallRegistered = false;
+    const forceExit = setTimeout(() => process.exit(1), 3000).unref();
+    
+    try {
+        for (const [ws] of connectedClients) {
+            if (ws.readyState === WebSocket.OPEN) {
+                await new Promise(resolve => {
+                    ws.once('close', resolve);
+                    ws.close();
+                })
+            }
+        }
 
-    wss.close(() => {
+        await new Promise(resolve => wss.close(resolve));
         console.log('WebSocket server closed');
-        server.close(() => {
-            console.log('HTTP server closed');
-            process.exit(0);
-        });
-    });
+        await new Promise(resolve => server.close(resolve));
+        console.log('HTTP server closed');
+
+        clearTimeout(forceExit);
+        process.exit(0);
+    } catch (err) {
+        console.error('Error during shutdown:', err);
+        process.exit(1);
+    }
 }
 
 server.listen(port, () => { // turns on websocket server on port

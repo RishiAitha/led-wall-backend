@@ -13,4 +13,7 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         clean: true, // Cleans old files in dist
     },
+    devServer: {
+        setupExitSignals: false
+    }
 };

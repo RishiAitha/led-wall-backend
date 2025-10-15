@@ -24,9 +24,4 @@ cm.registerToServer('DESKTOP')
         updateStatus();
     });
 
-const ws = cm.getWebSocket();
-if (ws) {
-    ws.addEventListener('close', () => {
-        updateStatus();
-    });
-}
+cm.handleEvent('CLOSE', updateStatus);
