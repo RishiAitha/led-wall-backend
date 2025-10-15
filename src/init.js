@@ -47,8 +47,8 @@ export async function init(setupScene = () => {}, onFrame = () => {}) {
     for (let i = 0; i < 2; i++) {
         const raySpace = renderer.xr.getController(i);
         const gripSpace = renderer.xr.getControllerGrip(i);
-        const mesh = controllerModelFactory.createControllerModel(gripSpace);
-        gripSpace.add(mesh);
+        // const mesh = controllerModelFactory.createControllerModel(gripSpace);
+        // gripSpace.add(mesh);
         player.add(raySpace, gripSpace);
         raySpace.visible = false;
         gripSpace.visible = false;
@@ -59,7 +59,7 @@ export async function init(setupScene = () => {}, onFrame = () => {}) {
             controllers[handedness] = {
                 raySpace,
                 gripSpace,
-                mesh,
+                // mesh,
                 gamepad: new GamepadWrapper(e.data.gamepad),
             };
         });

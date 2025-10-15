@@ -17,13 +17,13 @@ let screenRect;
 let statusDisplay;
 function setupScene({ scene, camera, renderer, player, controllers }) {
     const floorGeometry = new THREE.PlaneGeometry(6, 6);
-    const floorMaterial = new THREE.MeshStandardMaterial({color: 'white'});
+    const floorMaterial = new THREE.MeshBasicMaterial({color: 'white', transparent: true, opacity: 0.5 });
     floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotateX(-Math.PI / 2);
     scene.add(floor);
 
     const screenRectGeometry = new THREE.PlaneGeometry(1, 0.5);
-    const screenRectMaterial = new THREE.MeshStandardMaterial({color: 'red'});
+    const screenRectMaterial = new THREE.MeshStandardMaterial({color: 'red', transparent: true, opacity: 0.5 });
     screenRect = new THREE.Mesh(screenRectGeometry, screenRectMaterial);
     scene.add(screenRect);
     screenRect.position.set(0, 1.5, -0.75);
