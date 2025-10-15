@@ -29,9 +29,9 @@ export async function init(setupScene = () => {}, onFrame = () => {}) {
     renderer.xr.enabled = true;
     container.appendChild(renderer.domElement);
 
-    const environment = new RoomEnvironment(renderer);
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(environment).texture;
+    // const environment = new RoomEnvironment(renderer);
+    // const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    // scene.environment = pmremGenerator.fromScene(environment).texture;
 
     const player = new THREE.Group();
     scene.add(player);
@@ -107,5 +107,10 @@ export async function init(setupScene = () => {}, onFrame = () => {}) {
 
 	renderer.setAnimationLoop(animate);
 
-	document.body.appendChild(VRButton.createButton(renderer));
+	document.body.appendChild(VRButton.createButton(renderer, {
+        requiredFeatures: ['local-floor'],
+        sessionInit: {
+            optionalFeatures: ['hand-tracking']
+        }
+    }));
 }
