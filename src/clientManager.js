@@ -52,7 +52,7 @@ export function registerToServer(type) {
         ws.onmessage = ({ data }) => {
             try {
                 const message = JSON.parse(data);
-                console.log('Recieved message:', message);
+                //console.log('Recieved message:', message);
 
                 handleIncomingMessage(message, {
                     resolve: registrationResolver,

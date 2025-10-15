@@ -13,6 +13,7 @@ if (navigator.xr) {
 }
 
 let floor;
+let screenRect;
 let statusDisplay;
 function setupScene({ scene, camera, renderer, player, controllers }) {
     const floorGeometry = new THREE.PlaneGeometry(6, 6);
@@ -21,12 +22,18 @@ function setupScene({ scene, camera, renderer, player, controllers }) {
     floor.rotateX(-Math.PI / 2);
     scene.add(floor);
 
+    const screenRectGeometry = new THREE.PlaneGeometry(1, 0.5);
+    const screenRectMaterial = new THREE.MeshStandardMaterial({color: 'red'});
+    screenRect = new THREE.Mesh(screenRectGeometry, screenRectMaterial);
+    scene.add(screenRect);
+    screenRect.position.set(0, 1.5, -0.75);
+    
     statusDisplay = new Text();
     statusDisplay.anchorX = 'center';
     statusDisplay.anchorY = 'middle';
     statusDisplay.fontSize = 0.25;
     scene.add(statusDisplay);
-    statusDisplay.position.set(0, 1.5, -1.5);
+    statusDisplay.position.set(0, 3, -1.5);
 }
 
 async function onFrame(delta, time, {scene, camera, renderer, player, controllers}) {
@@ -39,6 +46,8 @@ async function onFrame(delta, time, {scene, camera, renderer, player, controller
                 type: 'VR_CONTROLLER_STATE',
                 message: {
                     controllerType: i == 0 ? 'right' : 'left',
+                    position: gripSpace.position,
+                    quaternion: gripSpace.quaternion,
                     triggerButtonState: gamepad.getButton(XR_BUTTONS.TRIGGER),
                     squeezeButtonState: gamepad.getButton(XR_BUTTONS.SQUEEZE),
                     touchpadButtonState: gamepad.getButton(XR_BUTTONS.TOUCHPAD),

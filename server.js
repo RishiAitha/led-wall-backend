@@ -195,7 +195,7 @@ wss.on('connection', (ws) => { // runs when a client connects to the server
 
         try {
             const data = JSON.parse(rawData);
-            console.log('Received data:', data);
+            //console.log('Received data:', data);
             handleMessage(ws, data);
         } catch (error) {
             console.error('Failed to parse JSON:', error);
