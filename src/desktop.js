@@ -1,7 +1,7 @@
 import * as cm from './clientManager.js';
 
 if (navigator.xr) {
-    navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+    navigator.xr.isSessionSupported('immersive-ar').then(supported => {
         if (supported) window.location.href = '/vr';
     });
 }

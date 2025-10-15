@@ -5,7 +5,7 @@ import { XR_BUTTONS, XR_AXES } from 'gamepad-wrapper';
 import { Text } from 'troika-three-text';
 
 if (navigator.xr) {
-    navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+    navigator.xr.isSessionSupported('immersive-ar').then(supported => {
         if (!supported) window.location.href = '/desktop';
     });
 } else {
