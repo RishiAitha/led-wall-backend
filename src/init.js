@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GamepadWrapper } from 'gamepad-wrapper';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { ARButton } from 'three/addons/webxr/ARButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
 export async function init(setupScene = () => {}, onFrame = () => {}) {
@@ -37,7 +37,7 @@ export async function init(setupScene = () => {}, onFrame = () => {}) {
     scene.add(player);
     player.add(camera);
 
-    const controllerModelFactory = new XRControllerModelFactory();
+    // const controllerModelFactory = new XRControllerModelFactory();
 
     const controllers = {
         left: null,
@@ -107,10 +107,5 @@ export async function init(setupScene = () => {}, onFrame = () => {}) {
 
 	renderer.setAnimationLoop(animate);
 
-	document.body.appendChild(VRButton.createButton(renderer, {
-        requiredFeatures: ['local-floor'],
-        sessionInit: {
-            optionalFeatures: ['hand-tracking']
-        }
-    }));
+	document.body.appendChild(ARButton.createButton(renderer));
 }

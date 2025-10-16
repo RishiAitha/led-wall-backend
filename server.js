@@ -49,6 +49,7 @@ function handleMessage(ws, data) {
         case 'ERROR': // client told server there was an error
             console.error('Client sent error:', data.message);
             break;
+        case 'VR_CALIBRATED':
         case 'VR_CONTROLLER_STATE': // handle vr client input
             const senderClientInfo = connectedClients.get(ws);
             const userID = senderClientInfo.userID;
@@ -142,6 +143,16 @@ function handleDisconnection(ws) { // runs when a client websocket closes
     const clientInfo = connectedClients.get(ws);
     if (clientInfo) {
         if (clientInfo.type === 'WALL') { // updates relevant info on connected wall
+            if (wallRegistered) {
+                for (const [clientWS, info] of connectedClients) {
+                    if (info.type === 'VR') {
+                        sendMessage(clientWS, {
+                            type: 'WALL_DISCONNECTED',
+                            message: 'Wall client disconnected'
+                        });
+                    }
+                }
+            }
             wallRegistered = false;
             console.log('Wall registered reset');
         } else {

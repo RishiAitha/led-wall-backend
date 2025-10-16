@@ -23,9 +23,6 @@ cm.handleEvent('CLOSE', updateStatus);
 const controllerStates = new Map();
 
 function handleVRState(message) {
-    // const stateDisplay = document.getElementById(`${message.controllerType}-controller-display-${message.userID}`);
-    // stateDisplay.textContent = JSON.stringify(message, null, 2);
-
     // save controller states
     const drawingCanvas = document.getElementById(`client-canvas-${message.userID}`);
     const ctx = drawingCanvas.getContext('2d');
@@ -38,99 +35,78 @@ function handleVRState(message) {
     // draw to canvas
     if (message.triggerButtonState == true) {
         ctx.fillStyle = message.controllerType == 'left' ? 'blue' : 'red';
+        
+        const dotProduct = ((message.bottomRightCorner[0] - message.topLeftCorner[0]) * (message.position.x - message.topLeftCorner[0]))
+            + ((message.bottomRightCorner[2] - message.topLeftCorner[2]) * (message.position.z - message.topLeftCorner[2]));
+        const screenVectorMagnitude = Math.sqrt(Math.pow((message.bottomRightCorner[0] - message.topLeftCorner[0]), 2) + Math.pow((message.bottomRightCorner[2] - message.topLeftCorner[2]), 2));
+        const xPosition = dotProduct / screenVectorMagnitude;
+        const yPosition = message.position.y - message.topLeftCorner[1];
 
-        const canvasX = ((message.position.x / 0.5) * (drawingCanvas.width / 2)) + (drawingCanvas.width / 2);
-        const canvasY = ((-(message.position.y - 1.5) / 0.25) * (drawingCanvas.height / 2)) + (drawingCanvas.height / 2);
-
+        const canvasX = ((xPosition / message.rectXDistance) * drawingCanvas.width);
+        const canvasY = ((-yPosition / message.rectYDistance) * drawingCanvas.height);
+        
         ctx.beginPath();
         ctx.arc(canvasX, canvasY, 5, 0, Math.PI * 2);
         ctx.fill();
     }
-
-    // ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-    
-    // const userStates = controllerStates.get(message.userID);
-
-    // Object.entries(userStates).forEach(([controllerType, state]) => {
-    //     if (message.controllerType == controllerType && state.triggerButtonState == true) {
-    //         ctx.fillStyle = controllerType == 'left' ? 'blue' : 'red';
-
-    //         const canvasX = ((state.position.x / 0.5) * (drawingCanvas.width / 2)) + (drawingCanvas.width / 2);
-    //         const canvasY = ((-(state.position.y - 1.5) / 0.25) * (drawingCanvas.height / 2)) + (drawingCanvas.height / 2);
-
-    //         ctx.beginPath();
-    //         ctx.arc(canvasX, canvasY, 5, 0, Math.PI * 2);
-    //         ctx.fill();
-    //     }
-    // });
 }
 
 function handleNewClient(message) {
-    // const { type, userID } = message;
-    // const clientInfoDisplay = document.createElement('div');
-    // clientInfoDisplay.id = `client-display-${userID}`;
-    // clientInfoDisplay.textContent = `\n\nClient Type: ${type}\nClient ID: ${userID}`;
-    // clientInfoDisplay.style.whiteSpace = 'pre-line';
-
-    // if (type === 'VR') {
-    //     const leftControllerStateDisplay = document.createElement('div');
-    //     leftControllerStateDisplay.id = `left-controller-display-${userID}`;
-    //     leftControllerStateDisplay.style.whiteSpace = 'pre-line';
-
-    //     const rightControllerStateDisplay = document.createElement('div');
-    //     rightControllerStateDisplay.id = `right-controller-display-${userID}`;
-    //     rightControllerStateDisplay.style.whiteSpace = 'pre-line';
-
-    //     clientInfoDisplay.appendChild(leftControllerStateDisplay);
-    //     clientInfoDisplay.appendChild(rightControllerStateDisplay);
-    // }
-    
-    // document.body.appendChild(clientInfoDisplay);
-
-    const {type, userID } = message;
+    const { type, userID } = message;
 
     if (type === 'VR') {
+        const clientDiv = document.createElement('div');
+        clientDiv.id = `client-${userID}`;
+
         const clientInfoDisplay = document.createElement('div');
         clientInfoDisplay.id = `client-display-${userID}`;
         clientInfoDisplay.textContent = `\n\nClient Type: ${type}\nClient ID: ${userID}`;
-        clientInfoDisplay.style.whiteSpace = 'pre-line';
+        clientInfoDisplay.style.whiteSpace = 'pre-line';  
 
-        const drawingCanvas = document.createElement('canvas');
-        drawingCanvas.id = `client-canvas-${userID}`;
-        drawingCanvas.width = 960;
-        drawingCanvas.height = 540;
-        drawingCanvas.style.border = '1px solid black';
-
-        const canvasBreak = document.createElement('br');
-        canvasBreak.id = `client-canvasBreak-${userID}`;
-
-        const clearButton = document.createElement('button');
-        clearButton.id = `client-clearButton-${userID}`;
-        clearButton.textContent = 'Clear Canvas';
-        clearButton.onclick = () => {
-            const ctx = drawingCanvas.getContext('2d');
-            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-        }
-
-        document.body.appendChild(clientInfoDisplay);
-        document.body.appendChild(drawingCanvas);
-        document.body.appendChild(canvasBreak);
-        document.body.appendChild(clearButton);
+        document.body.appendChild(clientDiv);
+        clientDiv.appendChild(clientInfoDisplay);
     }
+}
+
+function handleVRCalibration(message) {
+    const { userID, rectXDistance, rectYDistance } = message;
+
+    const clientDiv = document.getElementById(`client-${userID}`);
+    
+    const drawingCanvas = document.createElement('canvas');
+    drawingCanvas.id = `client-canvas-${userID}`;
+
+    const maxWidth = window.innerWidth * 0.95;
+    const maxHeight = window.innerHeight * 0.95;
+    const canvasScale = Math.min(maxWidth / rectXDistance, maxHeight / rectYDistance);
+
+    drawingCanvas.width = rectXDistance * canvasScale;
+    drawingCanvas.height = rectYDistance * canvasScale;
+    drawingCanvas.style.border = '1px solid black';
+
+    const canvasBreak = document.createElement('br');
+    canvasBreak.id = `client-canvasBreak-${userID}`;
+
+    const clearButton = document.createElement('button');
+    clearButton.id = `client-clearButton-${userID}`;
+    clearButton.textContent = 'Clear Canvas';
+    clearButton.onclick = () => {
+        const ctx = drawingCanvas.getContext('2d');
+        ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    }
+
+    clientDiv.appendChild(drawingCanvas);
+    clientDiv.appendChild(canvasBreak);
+    clientDiv.appendChild(clearButton);
 }
 
 function handleClientDisconnect(message) {
     const { type, userID } = message;
-    const clientInfoDisplay = document.getElementById(`client-display-${userID}`);
-    clientInfoDisplay.remove();
-    const drawingCanvas = document.getElementById(`client-canvas-${userID}`);
-    drawingCanvas.remove();
-    const canvasBreak = document.getElementById(`client-canvasBreak-${userID}`);
-    canvasBreak.remove();
-    const clearButton = document.getElementById(`client-clearButton-${userID}`);
-    clearButton.remove();
+    const clientDiv = document.getElementById(`client-${userID}`);
+    clientDiv.remove();
 }
 
 cm.handleEvent('NEW_CLIENT', handleNewClient);
 cm.handleEvent('CLIENT_DISCONNECTED', handleClientDisconnect);
+cm.handleEvent('VR_CALIBRATED', handleVRCalibration);
 cm.handleEvent('VR_CONTROLLER_STATE', handleVRState);
