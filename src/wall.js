@@ -83,6 +83,8 @@ function handleVRCalibration(message) {
     drawingCanvas.width = rectXDistance * canvasScale;
     drawingCanvas.height = rectYDistance * canvasScale;
     drawingCanvas.style.border = '1px solid black';
+    drawingCanvas.style.margin = 'auto';
+    drawingCanvas.style.display = 'block';
 
     const canvasBreak = document.createElement('br');
     canvasBreak.id = `client-canvasBreak-${userID}`;
@@ -98,6 +100,7 @@ function handleVRCalibration(message) {
     clientDiv.appendChild(drawingCanvas);
     clientDiv.appendChild(canvasBreak);
     clientDiv.appendChild(clearButton);
+    drawingCanvas.scrollIntoView();
 }
 
 function handleClientDisconnect(message) {
